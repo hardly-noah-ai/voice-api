@@ -1,5 +1,4 @@
-// voice-client/src/client/VoiceClient.ts
-/* unchanged, here for completeness */
+
 import { LlmClient } from "./llmClient";
 
 export class VoiceClient {
