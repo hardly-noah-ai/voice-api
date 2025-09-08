@@ -45,3 +45,35 @@ export type ConversationSessionResponse = {
         include: unknown | null;
     };
 };
+
+export type CompletionRequest = {
+    model: string;
+    prompt: string | string[];
+    max_tokens?: number;
+    temperature?: number;
+    top_p?: number;
+    frequency_penalty?: number;
+    presence_penalty?: number;
+    stop?: string | string[];
+    user?: string;
+};
+
+export type CompletionChoice = {
+    text: string;
+    index: number;
+    logprobs?: Record<string, number> | null;
+    finish_reason: 'stop' | 'length' | 'content_filter' | string;
+};
+
+export type CompletionResponse = {
+    id: string;
+    object: 'text_completion';
+    created: number;
+    model: string;
+    choices: CompletionChoice[];
+    usage?: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+    };
+};

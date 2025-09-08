@@ -5,6 +5,7 @@ import { FastifyPluginAsync, FastifyServerOptions } from 'fastify'
 import { setupContainer } from './setupContainer'
 import voiceServiceRouter from './voiceServiceRouter'
 import cors from '@fastify/cors'
+import mongodbPlugin from './plugins/mongodb'
 
 export interface AppOptions extends FastifyServerOptions, Partial<AutoloadPluginOptions> {
 
@@ -19,6 +20,7 @@ const app: FastifyPluginAsync<AppOptions> = async (
 
   void setupContainer()
 
+  await fastify.register(mongodbPlugin)
 
   await fastify.register(cors, {
     origin: ['http://localhost:5173', 'http://localhost:3000'],

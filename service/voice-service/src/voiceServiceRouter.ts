@@ -1,6 +1,16 @@
 import { FastifyPluginAsync } from 'fastify'
 import { container } from 'tsyringe'
 import { VoiceServiceAdapter } from './voiceServiceAdapter'
+import {
+  ConversationItemParams,
+  ConversationParams,
+  ConversationItemBody,
+  ConversationItemQuery,
+  conversationItemParamsSchema,
+  conversationParamsSchema,
+  conversationItemBodySchema,
+  conversationItemQuerySchema
+} from './dto/conversation.dto'
 
 const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   const adapter = container.resolve(VoiceServiceAdapter)
@@ -12,6 +22,38 @@ const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 
   fastify.get('/start-conversation', async function (request, reply) {
     return reply.status(200).send(await adapter.startConversation())
+  })
+
+  fastify.post<{
+    Params: ConversationItemParams;
+    Body: ConversationItemBody;
+  }>('/conversation-item/:id', {
+    schema: {
+      params: conversationItemParamsSchema,
+      body: conversationItemBodySchema
+    }
+  }, async function (request, reply) {
+    return reply.status(200).send(await adapter.saveConversationItem(request.params.id, request.body))
+  })
+
+  fastify.get<{
+    Params: ConversationParams;
+  }>('/conversation-items/:id', {
+    schema: {
+      params: conversationParamsSchema
+    }
+  }, async function (request, reply) {
+    return reply.status(200).send(await adapter.getConversationItems(request.params.id))
+  })
+
+  fastify.get<{
+    Querystring: ConversationItemQuery;
+  }>('/conversation-item', {
+    schema: {
+      querystring: conversationItemQuerySchema
+    }
+  }, async function (request, reply) {
+    return reply.status(200).send(await adapter.getConversationItem(request.query))
   })
 }
 
