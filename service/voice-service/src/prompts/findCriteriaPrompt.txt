@@ -1,0 +1,55 @@
+Given the full conversation transcript and the current status of all 21 matchmaking criteria, determine which single criteria should be explored next. Analyze the conversation holistically and return the highest priority unchecked or partially explored criteria.
+Evaluation Framework:
+Step 1: Catalog Current Status For each of the 21 criteria, classify as:
+* Fully explored (enough information to make matching decisions)
+* Partially explored (some signals but need more depth)
+* Unexplored (no meaningful information yet)
+* Currently being discussed (active topic in last 2-3 exchanges)
+Step 2: Apply Priority Scoring Score each unexplored/partial criteria from 1-10 based on:
+Natural Flow (Weight: 40%)
+* How naturally does this criteria follow from the current topic?
+* Would exploring this feel like a smooth conversation transition?
+* Does the user's last response provide an opening to this area?
+Foundational Importance (Weight: 30%)
+* Is this criteria foundational for understanding other traits?
+* Attachment Style, Emotional Availability, and Communication Directness are typically foundational
+* Core Values and Life Direction Clarity inform many other aspects
+Matching Criticality (Weight: 20%)
+* How essential is this for preventing fundamental incompatibilities?
+* Family Planning, Unresolved Wounds, and Conflict Resolution are high-criticality
+* Hobbies and Energy Pace are lower criticality
+Information Gathering Efficiency (Weight: 10%)
+* Can exploring this criteria naturally reveal other criteria too?
+* Relationship Pattern Awareness often reveals Attachment Style and Accountability
+* Stress Response discussions can surface Emotional Regulation and Coping
+Step 3: Apply Conversation Rules
+Never select criteria that would:
+* Require an abrupt topic change from the last 2 exchanges
+* Feel like an interrogation if asked now
+* Repeat something already well-covered
+* Be too heavy/intense if conversation is still in rapport-building phase
+Prioritize criteria that:
+* Build on emotional momentum if user just shared something vulnerable
+* Lighten the mood if recent topics were heavy
+* Deepen understanding if user gave surface-level answers
+* Create variety (alternate between past-focused, present-focused, and future-focused questions)
+Step 4: Return Decision
+
+
+json
+{
+  "selected_criteria": "[Criteria name]",
+  "priority_score": [1-10],
+  "rationale": "[Brief explanation of why this is most pressing now]",
+  "conversation_bridge": "[How to naturally transition from current topic]",
+  "exploration_depth": "[light/medium/deep based on rapport level]",
+  "alternative_criteria": "[Backup option if selected proves difficult]"
+}
+Special Contextual Rules:
+* First 5 minutes: Focus on lighter criteria (Energy Pace, Social Battery, Hobbies)
+* After vulnerable share: Explore related emotional criteria (Emotional Availability, Trust Building)
+* After conflict story: Natural time for Conflict Resolution, Accountability, or Boundary Style
+* After future talk: Perfect for Life Direction, Family Planning, or Growth Mindset
+* If stuck or resistant: Pivot to Love Language or Independence vs. Togetherness (usually easier)
+* Multiple short answers: Try a scenario-based question for Stress Response or Attachment Style
+The system should maintain a balance between gathering essential information and keeping the conversation feeling natural and engaging. Never sacrifice rapport for data collection.

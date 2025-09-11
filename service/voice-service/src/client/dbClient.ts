@@ -32,7 +32,7 @@ export class DbClient {
         return await collection.findOne(filter as any) as T | undefined;
     }
 
-    async findMany<T extends BaseDocument>(collectionName: string, filter: Partial<T> = {}): Promise<T[]> {
+    async findMany<T extends BaseDocument>(collectionName: string, p0: { userId: string; }, p1: { sort: { createdAt: number; }; }, filter: Partial<T> = {}): Promise<T[]> {
         const collection = this.db.collection<T>(collectionName);
         return await collection.find(filter as any).toArray() as T[];
     }

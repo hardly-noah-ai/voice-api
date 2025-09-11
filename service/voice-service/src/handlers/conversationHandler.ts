@@ -33,7 +33,7 @@ export class ConversationHandler {
     }
 
     async getConversationItems(userId: string): Promise<ConversationItem[]> {
-        return await this.dbClient.findMany<ConversationItem>('conversationItems', { userId });
+        return await this.dbClient.findMany<ConversationItem>('conversationItems', { userId }, { sort: { createdAt: -1 } });
     }
 
     async getConversationItem(query: ConversationItemQuery): Promise<ConversationItem | undefined> {

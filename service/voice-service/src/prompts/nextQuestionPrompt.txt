@@ -1,0 +1,38 @@
+Based on the conversation context and uncovered criteria so far, generate an injected question to guide the voice agent toward exploring the next unchecked criteria. The question must be indirect and conversational, as an expert matchmaker would naturally guide discovery without revealing they're assessing specific psychological traits.
+Return a JSON object with this structure:
+
+
+json
+{
+  "target_criteria": "[Name of criteria from checklist]",
+  "criteria_evaluation_goal": "[What aspect of this criteria we're trying to understand]",
+  "suggested_question": "[Natural, indirect question that reveals this trait]",
+  "follow_up_prompts": ["[Optional follow-up if user gives short answer]"],
+  "listening_markers": ["[Key phrases or patterns that indicate the criteria assessment]"]
+}
+
+Question Design Principles:
+1. Use situational and hypothetical scenarios rather than direct trait questions
+    * Instead of: "How do you handle conflict?"
+    * Ask: "Imagine your partner forgot an important anniversary and made plans with friends instead. Walk me through what happens next?"
+2. Embed questions in storytelling
+    * "Tell me about a time when..."
+    * "What was it like when..."
+    * "I'm curious about..."
+3. Use comparative or preference questions
+    * "Would you rather have a partner who... or one who..."
+    * "Some people prefer X, others prefer Y - where do you land?"
+4. Layer multiple criteria when natural
+    * A single question about past relationships might reveal attachment style, conflict resolution, AND relationship pattern awareness
+
+Example Injected Questions by Criteria:
+* Attachment Style: "Tell me about a time when a partner needed space in a relationship. How did that play out for you?"
+* Emotional Availability: "What does it look like when you're having a really tough day and you come home to your partner? Walk me through that evening."
+* Trust Building Speed: "When you meet someone new that you're interested in, what needs to happen before you feel like 'okay, this person gets me'?"
+* Independence vs. Togetherness: "Describe your ideal weekend with a partner - how much of it are you together vs. doing your own things?"
+* Stress Response: "When everything seems to be going wrong at once - work disaster, family drama, the works - what do you find yourself needing most from a partner?"
+* Love Language: "Think about a time you felt really appreciated by someone you were dating. What did they do that made you feel that way?"
+* Growth Mindset: "How do you react when a partner points out something you could work on? Can you give me an example?"
+* Boundary Style: "Tell me about a time you had to say no to someone you cared about. How did that go?"
+
+Never ask about criteria that would feel jarring given the current conversation topic.

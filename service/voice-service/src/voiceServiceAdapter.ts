@@ -27,4 +27,6 @@ export class VoiceServiceAdapter {
     async getConversationItem(query: ConversationItemQuery): Promise<ConversationItem | undefined> {
         return await this.conversationHandler.getConversationItem(query);
     }
+
+    
 }

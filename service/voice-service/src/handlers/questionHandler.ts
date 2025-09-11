@@ -1,8 +1,10 @@
 import { injectable } from "tsyringe";
-import { DbClient } from "../client/dbClient";
 import { LlmClient } from "../client/llmClient";
+import { DbClient } from "../client/dbClient";
 import { ConversationHandler } from "./conversationHandler";
-import { Question, QuestionChecklist, ChecklistCriteria } from "../types/question.types";
+import { ObjectId } from "mongodb";
+import * as fs from "fs/promises";
+import { InjectedQuestion, QuestionCache, CriteriaStatus, CriteriaPriority } from "../types/question.types";
 
 @injectable()
 export class QuestionHandler {
@@ -10,161 +12,169 @@ export class QuestionHandler {
         private llmClient: LlmClient,
         private dbClient: DbClient,
         private conversationHandler: ConversationHandler
-    ) {
+    ) { }
+
+    async getNextQuestion(userId: string): Promise<InjectedQuestion | null> {
+        const cachedQuestions = await this.getCachedQuestions(userId);
+
+        if (cachedQuestions.length === 0) {
+            this.generateAndCacheQuestion(userId).catch(error =>
+                console.error('Failed to generate question:', error)
+            );
+            return null;
+        }
+
+        const topQuestion = cachedQuestions[0];
+
+        if (!topQuestion.consumed) {
+            await this.markAsConsumed(topQuestion._id.toString());
+            this.generateAndCacheQuestion(userId).catch(error =>
+                console.error('Failed to generate question:', error)
+            );
+            return topQuestion.question;
+        }
+
+        this.generateAndCacheQuestion(userId).catch(error =>
+            console.error('Failed to generate question:', error)
+        );
+        return null;
     }
 
-    async updateQuestionsChecklist(userId: string): Promise<ChecklistCriteria[]> {
-        // Get or create checklist for user
-        let checklist = await this.dbClient.findOne<QuestionChecklist>('questionChecklists', { userId });
+    private async getCachedQuestions(userId: string): Promise<QuestionCache[]> {
+        return await this.dbClient.findMany<QuestionCache>(
+            'questionCache',
+            { userId },
+            { sort: { createdAt: -1 } }
+        );
+    }
 
-        if (!checklist) {
-            // Create initial checklist with default criteria
-            const initialCriteria = [
-                "Shows genuine interest in the other person",
-                "Asks open-ended questions",
-                "Shares personal stories and experiences",
-                "Demonstrates active listening",
-                "Shows confidence without arrogance",
-                "Uses appropriate humor",
-                "Respects boundaries and consent",
-                "Shows vulnerability appropriately",
-                "Maintains good conversation flow",
-                "Expresses authentic emotions"
-            ];
+    private async markAsConsumed(questionId: string): Promise<void> {
+        await this.dbClient.updateById<QuestionCache>(
+            'questionCache',
+            questionId,
+            { consumed: true }
+        );
+    }
 
-            checklist = await this.dbClient.create<QuestionChecklist>('questionChecklists', {
+    private async generateAndCacheQuestion(userId: string): Promise<void> {
+        try {
+            const question = await this.generateQuestion(userId);
+
+            const cacheEntry: Omit<QuestionCache, '_id' | 'createdAt' | 'updatedAt'> = {
+                uid: new ObjectId().toString(),
                 userId,
-                criteria: initialCriteria,
-                lastUpdated: new Date()
-            });
+                question,
+                consumed: false
+            };
+
+            await this.dbClient.create<QuestionCache>('questionCache', cacheEntry);
+        } catch (error) {
+            console.error('Error generating question for user', userId, error);
+        }
+    }
+
+    private async generateQuestion(userId: string): Promise<InjectedQuestion> {
+        const conversationHistory = await this.buildConversationHistory(userId);
+        const criteriaStatuses = await this.evaluateCriteriaStatuses(conversationHistory);
+        const nextCriteria = await this.determineNextCriteria(conversationHistory, criteriaStatuses);
+        return await this.createInjectedQuestion(conversationHistory, nextCriteria);
+    }
+
+    private async buildConversationHistory(userId: string): Promise<string> {
+        const conversationItems = await this.conversationHandler.getConversationItems(userId);
+
+        if (conversationItems.length === 0) {
+            return "";
         }
 
-        // Get all conversation items for the user
-        const allConversationItems = await this.conversationHandler.getConversationItems(userId);
+        return conversationItems
+            .map(item => `${item.speaker}: ${item.text}`)
+            .join('\n');
+    }
 
-        if (allConversationItems.length === 0) {
-            return checklist.criteria.map((criterion, index) => ({
-                id: `criterion_${index}`,
-                description: criterion,
-                category: "general",
-                isMet: false
-            }));
-        }
+    private async evaluateCriteriaStatuses(conversationHistory: string): Promise<CriteriaStatus[]> {
+        const [criteriaPrompt, criteriaList] = await Promise.all([
+            this.loadPrompt("evaluateCriteriaPrompt.txt"),
+            this.loadPrompt("criteria.txt")
+        ]);
 
-        // Format conversation for analysis
-        const conversationHistory = allConversationItems.map(item =>
-            `${item.speaker}: ${item.text}`
-        ).join('\n');
-
-        // Create prompt to analyze which criteria are met
-        const prompt = `You are an expert dating coach analyzing a conversation. Based on the conversation history below, determine which of the following criteria have been met by the user:
-
-CRITERIA TO EVALUATE:
-${checklist.criteria.map((c, i) => `${i + 1}. ${c}`).join('\n')}
-
-CONVERSATION HISTORY:
-${conversationHistory}
-
-For each criterion, determine if it has been demonstrated in the conversation. Respond with a JSON array where each object contains:
-- id: "criterion_[number]" (e.g., "criterion_1")
-- description: the exact criterion text
-- category: "communication", "confidence", "emotional_intelligence", or "general"
-- isMet: true if the criterion has been demonstrated, false otherwise
-
-Focus on the user's contributions to the conversation. Be strict but fair in your evaluation.
-
-JSON Response:`;
-
-        const payload = {
-            model: "gpt-3.5-turbo-instruct",
-            prompt: prompt,
-            max_tokens: 1000,
-            temperature: 0.3,
-            user: userId
-        };
-
-        const llmResponse = await this.llmClient.createTextCompletion(payload);
-        const responseText = llmResponse.choices[0]?.text || '[]';
-
-        const evaluatedCriteria = JSON.parse(responseText) as ChecklistCriteria[];
-
-        // Update the checklist with new evaluation
-        await this.dbClient.updateById<QuestionChecklist>('questionChecklists', checklist._id!.toString(), {
-            lastUpdated: new Date()
+        const prompt = this.formatPrompt(criteriaPrompt, {
+            criteria: criteriaList,
+            conversation: conversationHistory
         });
 
-        return evaluatedCriteria;
+        const response = await this.callLlm(prompt, 0.3);
+        const result = JSON.parse(response);
+        return result.criteria_statuses as CriteriaStatus[];
     }
 
-    async createNextQuestion(userId: string): Promise<Question> {
-        // First, update the checklist to see what criteria are missing
-        const checklistCriteria = await this.updateQuestionsChecklist(userId);
+    private async determineNextCriteria(
+        conversationHistory: string,
+        criteriaStatuses: CriteriaStatus[]
+    ): Promise<CriteriaPriority> {
+        const prompt = await this.loadPrompt("findCriteriaPrompt.txt");
 
-        // Find the most absent criteria (not met)
-        const unmetCriteria = checklistCriteria.filter(c => !c.isMet);
+        const statusSummary = criteriaStatuses
+            .map(cs => `${cs.criteria}: ${cs.status}`)
+            .join('\n');
 
-        let targetCriterion: string;
-        let category: string;
+        const formattedPrompt = this.formatPrompt(prompt, {
+            conversation: conversationHistory,
+            criteriaStatus: statusSummary
+        });
 
-        if (unmetCriteria.length === 0) {
-            // All criteria met, generate a general improvement question
-            targetCriterion = "Continue improving overall dating conversation skills";
-            category = "general_improvement";
-        } else {
-            // Find the most important unmet criterion
-            targetCriterion = unmetCriteria[0].description;
-            category = unmetCriteria[0].category;
-        }
+        const response = await this.callLlm(formattedPrompt, 0.5);
+        return JSON.parse(response) as CriteriaPriority;
+    }
 
-        // Get recent conversation for context
-        const conversationItems = await this.conversationHandler.getConversationItems(userId);
-        const last5Items = conversationItems.slice(-5);
+    private async createInjectedQuestion(
+        conversationHistory: string,
+        nextCriteria: CriteriaPriority
+    ): Promise<InjectedQuestion> {
+        const prompt = await this.loadPrompt("nextQuestionPrompt.txt");
 
-        const conversationHistory = last5Items.map(item =>
-            `${item.speaker}: ${item.text}`
-        ).join('\n');
+        const formattedPrompt = this.formatPrompt(prompt, {
+            targetCriteria: nextCriteria.selected_criteria,
+            rationale: nextCriteria.rationale,
+            conversationBridge: nextCriteria.conversation_bridge,
+            explorationDepth: nextCriteria.exploration_depth,
+            conversation: conversationHistory
+        });
 
-        const prompt = `You are an expert dating coach. Based on the conversation history and the specific area that needs improvement, generate a targeted follow-up question.
+        const response = await this.callLlm(formattedPrompt, 0.7);
+        return JSON.parse(response) as InjectedQuestion;
+    }
 
-TARGET AREA FOR IMPROVEMENT: ${targetCriterion}
-CATEGORY: ${category}
-
-CONVERSATION HISTORY:
-${conversationHistory}
-
-Generate a question that will help the user practice and improve in the specific area identified. The question should be:
-- Directly related to the unmet criterion
-- Practical and actionable
-- Appropriate for the conversation context
-- Encouraging but challenging
-
-Respond with a JSON object containing:
-- question: the question text
-- context: brief context explaining why this question is important
-- category: the category of the question
-- difficulty: easy, medium, or hard
-- tags: array of relevant tags
-
-JSON Response:`;
-
+    private async callLlm(prompt: string, temperature: number): Promise<string> {
         const payload = {
-            model: "gpt-3.5-turbo-instruct",
-            prompt: prompt,
-            max_tokens: 500,
-            temperature: 0.7,
-            user: userId
+            model: "gpt-4-turbo-preview",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are an expert matchmaker. Return only valid JSON."
+                },
+            ],
+            temperature,
+            response_format: { type: "json_object" },
+            prompt
         };
 
-        const llmResponse = await this.llmClient.createTextCompletion(payload);
-        const responseText = llmResponse.choices[0]?.text || '{}';
-        const questionData = JSON.parse(responseText) as Omit<Question, '_id' | 'createdAt' | 'updatedAt'>;
+        const response = await this.llmClient.createTextCompletion(payload);
+        return response.choices[0].text;
+    }
 
-        const questionToStore = {
-            ...questionData,
-            userId
-        };
+    private formatPrompt(template: string, variables: Record<string, string>): string {
+        return Object.entries(variables).reduce(
+            (prompt, [key, value]) => prompt.replace(new RegExp(`{{${key}}}`, 'g'), value),
+            template
+        );
+    }
 
-        const storedQuestion = await this.dbClient.create<Question>('questions', questionToStore);
-        return storedQuestion;
+    private async loadPrompt(filename: string): Promise<string> {
+        try {
+            return await fs.readFile(`./prompts/${filename}`, 'utf-8');
+        } catch (error) {
+            throw new Error(`Failed to load prompt file: ${filename}`);
+        }
     }
 }
