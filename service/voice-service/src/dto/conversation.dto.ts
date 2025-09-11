@@ -37,7 +37,16 @@ export const conversationItemQuerySchema = {
     }
 } as const;
 
+export const questionQuerySchema = {
+    type: 'object',
+    properties: {
+        userId: { type: 'string' }
+    },
+    required: ['userId']
+} as const;
+
 export type ConversationItemParams = FromSchema<typeof conversationItemParamsSchema>;
 export type ConversationParams = FromSchema<typeof conversationParamsSchema>;
 export type ConversationItemBody = FromSchema<typeof conversationItemBodySchema>;
 export type ConversationItemQuery = FromSchema<typeof conversationItemQuerySchema>;
+export type QuestionQuery = FromSchema<typeof questionQuerySchema>;

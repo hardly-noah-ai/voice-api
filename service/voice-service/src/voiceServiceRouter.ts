@@ -9,7 +9,9 @@ import {
   conversationItemParamsSchema,
   conversationParamsSchema,
   conversationItemBodySchema,
-  conversationItemQuerySchema
+  conversationItemQuerySchema,
+  QuestionQuery,
+  questionQuerySchema
 } from './dto/conversation.dto'
 
 const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
@@ -54,6 +56,16 @@ const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     }
   }, async function (request, reply) {
     return reply.status(200).send(await adapter.getConversationItem(request.query))
+  })
+
+  fastify.get<{
+    Querystring: QuestionQuery;
+  }>('/next-question', {
+    schema: {
+      querystring: questionQuerySchema
+    }
+  }, async function (request, reply) {
+    return reply.status(200).send(await adapter.getNextQuestion(request.query.userId))
   })
 }
 

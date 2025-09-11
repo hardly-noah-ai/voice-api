@@ -14,14 +14,14 @@ export class QuestionHandler {
         private conversationHandler: ConversationHandler
     ) { }
 
-    async getNextQuestion(userId: string): Promise<InjectedQuestion | null> {
+    async getNextQuestion(userId: string): Promise<InjectedQuestion | undefined> {
         const cachedQuestions = await this.getCachedQuestions(userId);
 
         if (cachedQuestions.length === 0) {
             this.generateAndCacheQuestion(userId).catch(error =>
                 console.error('Failed to generate question:', error)
             );
-            return null;
+            return undefined;
         }
 
         const topQuestion = cachedQuestions[0];
@@ -37,7 +37,7 @@ export class QuestionHandler {
         this.generateAndCacheQuestion(userId).catch(error =>
             console.error('Failed to generate question:', error)
         );
-        return null;
+        return undefined;
     }
 
     private async getCachedQuestions(userId: string): Promise<QuestionCache[]> {

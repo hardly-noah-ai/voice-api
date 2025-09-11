@@ -4,11 +4,15 @@ import { ConversationSessionResponse } from "./client/types"
 import { ConversationItemBody, ConversationItemQuery } from "./dto/conversation.dto"
 import { ConversationItem } from "./types/conversation.types"
 import { ConversationHandler } from "./handlers/conversationHandler"
+import { QuestionHandler } from "./handlers/questionHandler"
+import { InjectedQuestion } from "./types/question.types"
+
 @injectable()
 export class VoiceServiceAdapter {
     constructor(
         private llmClient: LlmClient,
         private conversationHandler: ConversationHandler,
+        private questionHandler: QuestionHandler
     ) {
     }
 
@@ -28,5 +32,7 @@ export class VoiceServiceAdapter {
         return await this.conversationHandler.getConversationItem(query);
     }
 
-    
+    async getNextQuestion(userId: string): Promise<InjectedQuestion | undefined> {
+        return await this.questionHandler.getNextQuestion(userId);
+    }
 }
