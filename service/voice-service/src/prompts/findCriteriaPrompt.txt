@@ -1,10 +1,11 @@
 Given the full conversation transcript and the current status of all 21 matchmaking criteria, determine which single criteria should be explored next. Analyze the conversation holistically and return the highest priority unchecked or partially explored criteria.
 Evaluation Framework:
 Step 1: Catalog Current Status For each of the 21 criteria, classify as:
-* Fully explored (enough information to make matching decisions)
-* Partially explored (some signals but need more depth)
-* Unexplored (no meaningful information yet)
-* Currently being discussed (active topic in last 2-3 exchanges)
+- fully_explored: Enough information to make matching decisions with high confidence
+- mostly_explored: Substantial information gathered, sufficient for matching
+- partially_explored: Some signals but need more depth
+- unexplored: No meaningful information yet
+- currently_active: Active topic in last 2-3 exchanges
 Step 2: Apply Priority Scoring Score each unexplored/partial criteria from 1-10 based on:
 Natural Flow (Weight: 40%)
 * How naturally does this criteria follow from the current topic?

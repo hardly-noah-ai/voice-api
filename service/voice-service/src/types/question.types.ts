@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 export type CriteriaStatus = {
     criteria: string;
-    status: "fully_explored" | "partially_explored" | "unexplored" | "currently_active";
+    status: "fully_explored" | "mostly_explored" | "partially_explored" | "unexplored" | "currently_active";
     signals: string[];
 };
 

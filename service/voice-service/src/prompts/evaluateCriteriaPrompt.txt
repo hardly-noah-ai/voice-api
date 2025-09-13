@@ -1,0 +1,35 @@
+Analyze the conversation against the provided matchmaking criteria. For each criterion, determine how thoroughly it has been explored based on the conversation content.
+
+CRITERIA TO EVALUATE:
+{{criteria}}
+
+CONVERSATION:
+{{conversation}}
+
+For each criterion listed above, classify its exploration status:
+
+- **fully_explored**: Enough information to make matching decisions with high confidence. Multiple clear signals, direct statements, or detailed examples that thoroughly reveal this aspect.
+- **mostly_explored**: Substantial information gathered, sufficient for matching. Good understanding with some depth, though minor details may be missing.
+- **partially_explored**: Some signals but need more depth. Initial information present but insufficient for confident matching decisions.
+- **unexplored**: No meaningful information yet. This topic hasn't been addressed.
+- **currently_active**: Active topic in last 2-3 exchanges. The conversation is actively exploring this area right now.
+
+Examine the conversation for both direct statements and indirect signals. Consider:
+- Explicit mentions of the criterion
+- Stories or examples that reveal the criterion
+- Behavioral patterns demonstrated in responses
+- Emotional reactions that indicate underlying traits
+- Values expressed through opinions or preferences
+
+Return a JSON object with the following structure:
+{
+  "criteria_statuses": [
+    {
+      "criteria": "[Exact criterion name from the list]",
+      "status": "[One of: fully_explored, mostly_explored, partially_explored, unexplored, currently_active]",
+      "signals": ["List of specific quotes or observations from the conversation that support this classification"]
+    }
+  ]
+}
+
+Evaluate ALL criteria from the provided list, even if unexplored. Be thorough but realistic - most criteria in a typical conversation will be unexplored or partially explored unless specifically discussed.

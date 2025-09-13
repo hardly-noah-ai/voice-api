@@ -55,4 +55,16 @@ export class ConversationHandler {
         return await this.dbClient.findOne<ConversationItem>('conversationItems', filter);
     }
 
+    async getConversationHistory(userId: string): Promise<string> {
+        const conversationItems = await this.getConversationItems(userId);
+
+        if (conversationItems.length === 0) {
+            return "";
+        }
+
+        return conversationItems
+            .map(item => `${item.speaker}: ${item.text}`)
+            .join('\n');
+    }
+
 }
