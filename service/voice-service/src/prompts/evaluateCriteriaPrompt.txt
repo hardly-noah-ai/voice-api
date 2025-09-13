@@ -25,11 +25,34 @@ Return a JSON object with the following structure:
 {
   "criteria_statuses": [
     {
-      "criteria": "[Exact criterion name from the list]",
+      "criteria": "[EXACT NAME - see below]",
       "status": "[One of: fully_explored, mostly_explored, partially_explored, unexplored, currently_active]",
       "signals": ["List of specific quotes or observations from the conversation that support this classification"]
     }
   ]
 }
 
-Evaluate ALL criteria from the provided list, even if unexplored. Be thorough but realistic - most criteria in a typical conversation will be unexplored or partially explored unless specifically discussed.
+CRITICAL: For the "criteria" field, you MUST use the EXACT criterion name as it appears before the dash in the criteria list above. Do not modify, abbreviate, or change the capitalization. The valid values are:
+- "Attachment Style"
+- "Conflict Resolution Style"
+- "Emotional Availability"
+- "Communication Directness"
+- "Core Values Hierarchy"
+- "Energy & Lifestyle Pace"
+- "Social Battery Type"
+- "Love Language"
+- "Growth Mindset"
+- "Stress Response Pattern"
+- "Trust Building Speed"
+- "Independence vs. Togetherness Need"
+- "Emotional Regulation Ability"
+- "Life Direction Clarity"
+- "Accountability Level"
+- "Change Adaptability"
+- "Relationship Pattern Awareness"
+- "Boundary Style"
+- "Family Planning Stance"
+- "Unresolved Emotional Wounds"
+- "Hobbies"
+
+Evaluate ALL 21 criteria from the provided list, even if unexplored. Be thorough but realistic - most criteria in a typical conversation will be unexplored or partially explored unless specifically discussed.

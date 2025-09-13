@@ -1,4 +1,3 @@
-// llm-client.ts
 import { BaseClient } from '@noah-ai/base-client';
 import {
   CompletionRequest,

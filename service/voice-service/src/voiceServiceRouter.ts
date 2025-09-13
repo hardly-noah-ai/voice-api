@@ -11,7 +11,9 @@ import {
   conversationItemBodySchema,
   conversationItemQuerySchema,
   QuestionQuery,
-  questionQuerySchema
+  questionQuerySchema,
+  CriterionQuery,
+  criterionQuerySchema
 } from './dto/conversation.dto'
 
 const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
@@ -66,6 +68,16 @@ const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     }
   }, async function (request, reply) {
     return reply.status(200).send(await adapter.getNextQuestion(request.query.userId))
+  })
+
+  fastify.get<{
+    Querystring: CriterionQuery;
+  }>('/is-criterion-met', {
+    schema: {
+      querystring: criterionQuerySchema
+    }
+  }, async function (request, reply) {
+    return reply.status(200).send(await adapter.isCriterionMet(request.query.userId, request.query.criterionName))
   })
 }
 

@@ -26,6 +26,10 @@ const getMongoClient = async (): Promise<MongoClient> => {
 };
 
 export default fp(async function (fastify) {
+    if (fastify.hasDecorator('mongodb')) {
+        return;
+    }
+
     const client = await getMongoClient();
     const dbName = process.env.MONGODB_DB_NAME || 'voice-service';
     const db = client.db(dbName);

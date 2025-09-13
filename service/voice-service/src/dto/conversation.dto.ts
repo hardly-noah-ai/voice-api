@@ -45,8 +45,43 @@ export const questionQuerySchema = {
     required: ['userId']
 } as const;
 
+export const criterionQuerySchema = {
+    type: 'object',
+    properties: {
+        userId: { type: 'string' },
+        criterionName: {
+            type: 'string',
+            enum: [
+                "Attachment Style",
+                "Conflict Resolution Style",
+                "Emotional Availability",
+                "Communication Directness",
+                "Core Values Hierarchy",
+                "Energy & Lifestyle Pace",
+                "Social Battery Type",
+                "Love Language",
+                "Growth Mindset",
+                "Stress Response Pattern",
+                "Trust Building Speed",
+                "Independence vs. Togetherness Need",
+                "Emotional Regulation Ability",
+                "Life Direction Clarity",
+                "Accountability Level",
+                "Change Adaptability",
+                "Relationship Pattern Awareness",
+                "Boundary Style",
+                "Family Planning Stance",
+                "Unresolved Emotional Wounds",
+                "Hobbies"
+            ]
+        }
+    },
+    required: ['userId', 'criterionName']
+} as const;
+
 export type ConversationItemParams = FromSchema<typeof conversationItemParamsSchema>;
 export type ConversationParams = FromSchema<typeof conversationParamsSchema>;
 export type ConversationItemBody = FromSchema<typeof conversationItemBodySchema>;
 export type ConversationItemQuery = FromSchema<typeof conversationItemQuerySchema>;
 export type QuestionQuery = FromSchema<typeof questionQuerySchema>;
+export type CriterionQuery = FromSchema<typeof criterionQuerySchema>;

@@ -6,13 +6,15 @@ import { ConversationItem } from "./types/conversation.types"
 import { ConversationHandler } from "./handlers/conversationHandler"
 import { QuestionHandler } from "./handlers/questionHandler"
 import { InjectedQuestion } from "./types/question.types"
+import { CriteriaHandler } from "./handlers/criteriaHandler"
 
 @injectable()
 export class VoiceServiceAdapter {
     constructor(
         private llmClient: LlmClient,
         private conversationHandler: ConversationHandler,
-        private questionHandler: QuestionHandler
+        private questionHandler: QuestionHandler,
+        private criteriaHandler: CriteriaHandler
     ) {
     }
 
@@ -34,5 +36,9 @@ export class VoiceServiceAdapter {
 
     async getNextQuestion(userId: string): Promise<InjectedQuestion | undefined> {
         return await this.questionHandler.getNextQuestion(userId);
+    }
+
+    async isCriterionMet(userId: string, criterionName: string): Promise<boolean> {
+        return await this.criteriaHandler.checkCriterionStatus(userId, criterionName);
     }
 }

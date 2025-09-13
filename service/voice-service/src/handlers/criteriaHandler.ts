@@ -1,12 +1,27 @@
 import { injectable } from "tsyringe";
 import { LlmHandler } from "./llmHandler";
-import { CriteriaStatus, CriteriaPriority } from "../types/question.types";
+import { CriteriaStatus, CriteriaPriority, Criteria, RawCriteriaStatus } from "../types/question.types";
+import { ConversationHandler } from "./conversationHandler";
 
 @injectable()
 export class CriteriaHandler {
     constructor(
-        private llmHandler: LlmHandler
+        private llmHandler: LlmHandler,
+        private conversationHandler: ConversationHandler
     ) { }
+
+    private parseCriteriaString(criteriaString: string): Criteria {
+        const criteriaEntry = Object.entries(Criteria).find(
+            ([_, value]) => value === criteriaString
+        );
+
+        if (!criteriaEntry) {
+            console.error(`Unknown criteria received from LLM: "${criteriaString}"`);
+            throw new Error(`Unknown criteria: ${criteriaString}`);
+        }
+
+        return criteriaEntry[1] as Criteria;
+    }
 
     async evaluateCriteriaStatuses(conversationHistory: string): Promise<CriteriaStatus[]> {
         const [criteriaPrompt, criteriaList] = await Promise.all([
@@ -21,7 +36,15 @@ export class CriteriaHandler {
 
         const response = await this.llmHandler.callLlm(prompt, 0.3);
         const result = JSON.parse(response);
-        return result.criteria_statuses as CriteriaStatus[];
+
+
+
+        const criteriaStatuses = result.criteria_statuses.map((criteriaStatus: RawCriteriaStatus) => ({
+            ...criteriaStatus,
+            criteria: this.parseCriteriaString(criteriaStatus.criteria)
+        })) as CriteriaStatus[];
+
+        return criteriaStatuses;
     }
 
     async determineNextCriteria(
@@ -48,10 +71,11 @@ export class CriteriaHandler {
         return JSON.parse(response) as CriteriaPriority;
     }
 
-    private async checkCriterionStatus(
-        conversationHistory: string,
+    async checkCriterionStatus(
+        userId: string,
         criterionName: string
     ): Promise<boolean> {
+        const conversationHistory = await this.conversationHandler.getConversationHistory(userId);
         const criteriaStatuses = await this.evaluateCriteriaStatuses(conversationHistory);
         const targetCriterion = criteriaStatuses.find(
             cs => cs.criteria.toLowerCase() === criterionName.toLowerCase()
