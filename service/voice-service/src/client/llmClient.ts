@@ -11,7 +11,6 @@ export class LlmClient {
   private client: BaseClient;
 
   constructor(
-    @inject('SYSTEM_PROMPT') private systemPrompt: string,
     @inject('OPENAI_API_KEY') private openaiApiKey: string
   ) {
     this.client = new BaseClient(process.env.OPENAI_BASE_URL!);
@@ -20,7 +19,7 @@ export class LlmClient {
   async startConversationSession(): Promise<ConversationSessionResponse> {
     return this.client.post<ConversationSessionResponse>(
       '/realtime/client_secrets',
-      { session: { type: 'realtime', model: 'gpt-realtime' } },
+      { session: { type: 'realtime', model: 'gpt-realtime', instructions: await this.getSystemPrompt() } },
       { headers: { Authorization: `Bearer ${this.openaiApiKey}`, 'Content-Type': 'application/json' } }
     );
   }
@@ -32,6 +31,15 @@ export class LlmClient {
       '/v1/completions',
       payload,
       { headers: { Authorization: `Bearer ${this.openaiApiKey}`, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  private async getSystemPrompt(): Promise<string> {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    return await fs.readFile(
+      path.join(__dirname, '..', 'prompts', 'voiceSystemPrompt.txt'),
+      'utf8'
     );
   }
 }
